@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 //middleware;
@@ -41,7 +41,31 @@ async function run() {
         const result = await cursor.toArray(cursor)
         res.send(result);
     })
-
+    
+    app.get('/allbooks/:id',async(req,res)=>{
+      const id = req.params.id;
+      const query = {_id : new ObjectId(id)}
+      const result = await booksCollection.findOne(query)
+      res.send(result)
+    })
+    app.get('allbooks/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id : new ObjectId(id)}
+      const options = {upsert :true }
+      const updatedBook = req.body;
+      const book = {
+        $set:{
+          name: updatedBook.name,
+          category: updatedBook.category,
+          image: updatedBook.image,
+          author: updatedBook.author,
+          rating: updatedBook.rating,
+          description: updatedBook.description,
+        }
+      }
+      const result = await booksCollection.updateOne(filter,book,options)
+      res.send(result)
+    })
 
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
