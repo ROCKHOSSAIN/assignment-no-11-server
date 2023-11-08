@@ -1,13 +1,21 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const app = express();
+const cookieParser = require('cookie-parser')
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 //middleware;
-app.use(cors())
+app.use(cors({
+  origin:[
+    'http://localhost:5173'
+  ],
+  credentials:true
+}))
 app.use(express.json());
+app.use(cookieParser());
 // /LibraryManagement
 //o8hcw2gQ2xn8asVV
 
@@ -25,13 +33,44 @@ const client = new MongoClient(uri, {
   }
 });
 
+//middlewares
+const logger = (req,res,next)=>{
+  console.log('log:info',req.method,req.url);
+  next();
+}
+const verifyToken=(req,res,next)=>{
+  const token = req?.cookies?.token;
+  console.log('token in the middleware',token)
+  next();
+}
+
 async function run() {
   try {
 
       await client.close();
     const booksCollection = client.db('libraryDB').collection('bookCollection')
     const borrowCollection = client.db('borrowDB').collection('borrowCollection')
-    app.post('/allbooks',async(req,res)=>{
+    //jwt 
+    app.post('/jwt',async(req,res)=>{
+      const user = req.body;
+      console.log('user for token',user);
+      const token = jwt.sign(user,process.env.ACCESS_TOKEN_SECRET,{expiresIn:'1h'})
+      res.cookie('token',token,{
+        httpOnly:true,
+        secure:true,
+        sameSite:'none'
+    })
+    .send({success:true})
+    })
+    app.post('/logout',logger,verifyToken,async(req,res)=>{
+      const user = req.body;
+      console.log('logging out user',user)
+      // console.log('cook cookies',req.cookies)
+      res.clearCookie('token',{maxAge:0}).send({success:true})
+    })
+
+
+    app.post('/allbooks',logger,verifyToken,async(req,res)=>{
         const newBook = req.body;
         console.log(newBook);
         const result = await booksCollection.insertOne(newBook)
@@ -81,6 +120,9 @@ async function run() {
       const result = await cursor.toArray(cursor)
       res.send(result)
     })
+
+    //auth realted api
+   
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
