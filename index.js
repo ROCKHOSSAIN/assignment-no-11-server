@@ -30,6 +30,7 @@ async function run() {
 
       await client.close();
     const booksCollection = client.db('libraryDB').collection('bookCollection')
+    const borrowCollection = client.db('borrowDB').collection('borrowCollection')
     app.post('/allbooks',async(req,res)=>{
         const newBook = req.body;
         console.log(newBook);
@@ -48,7 +49,7 @@ async function run() {
       const result = await booksCollection.findOne(query)
       res.send(result)
     })
-    app.get('allbooks/:id',async(req,res)=>{
+    app.put('/allbooks/:id',async(req,res)=>{
       const id = req.params.id;
       const filter = {_id : new ObjectId(id)}
       const options = {upsert :true }
@@ -67,6 +68,19 @@ async function run() {
       res.send(result)
     })
 
+    //borrow data create mongodb
+    app.post('/borrowbook',async(req,res)=>{
+      const borrowBody = req.body
+      console.log(borrowBody)
+      const result = await borrowCollection.insertOne(borrowBody)
+      res.send(result)
+    })
+    //borrow get
+    app.get('/borrowbook',async(req,res)=>{
+      const cursor = borrowCollection.find()
+      const result = await cursor.toArray(cursor)
+      res.send(result)
+    })
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     // Send a ping to confirm a successful connection
