@@ -8,9 +8,11 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
 //middleware;
+// 'http://localhost:5173'
 app.use(cors({
   origin:[
-    'http://localhost:5173'
+    'https://library-management-syste-12005.web.app',
+    'https://library-management-syste-12005.firebaseapp.com'
   ],
   credentials:true
 }))
@@ -56,7 +58,7 @@ const verifyToken=(req,res,next)=>{
 async function run() {
   try {
 
-      await client.close();
+      // await client.close();
     const booksCollection = client.db('libraryDB').collection('bookCollection')
     const borrowCollection = client.db('borrowDB').collection('borrowCollection')
     //jwt 
@@ -119,7 +121,7 @@ async function run() {
     app.patch('/allbooks/:id',async(req,res)=>{
       const id = req.params.id;
       const filter = {_id : new ObjectId(id)}
-      const options = {upsert :true }
+      // const options = {upsert :true }
       const updatedquantity = req.body;
       const bookquantity = {
         $set:{
@@ -127,7 +129,7 @@ async function run() {
          
         }
       }
-      const result = await booksCollection.updateOne(filter,bookquantity,options)
+      const result = await booksCollection.updateOne(filter,bookquantity)
       res.send(result)
     })
 
@@ -145,10 +147,17 @@ async function run() {
       res.send(result)
     })
 
+    app.delete('/borrowbook/:id',async(req,res)=>{
+      const id = req.params.id
+      const query ={_id:new ObjectId(id)};
+      const result = await borrowCollection.deleteOne(query)
+      res.send(result);
+    })
+
     //auth realted api
    
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
