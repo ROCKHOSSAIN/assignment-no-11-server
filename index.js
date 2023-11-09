@@ -40,7 +40,16 @@ const logger = (req,res,next)=>{
 }
 const verifyToken=(req,res,next)=>{
   const token = req?.cookies?.token;
-  console.log('token in the middleware',token)
+  // console.log('token in the middleware',token)
+  if(!token){
+    return res.status(401).send({message:'unauthorized access'})
+  }
+  jwt.verify(token,process.env.ACCESS_TOKEN_SECRET,(err,decoded)=>{
+    if(err){
+      return res.status(401).send({message:'unauthorized access'})
+    }
+    req.user = decoded
+  })
   next();
 }
 
@@ -60,17 +69,17 @@ async function run() {
         secure:true,
         sameSite:'none'
     })
-    .send({success:true})
+    .send({success:true,token})
     })
-    app.post('/logout',logger,verifyToken,async(req,res)=>{
+    app.post('/logout',verifyToken,async(req,res)=>{
       const user = req.body;
       console.log('logging out user',user)
-      // console.log('cook cookies',req.cookies)
+      console.log('cook cookies',req.cookies)
       res.clearCookie('token',{maxAge:0}).send({success:true})
     })
 
 
-    app.post('/allbooks',logger,verifyToken,async(req,res)=>{
+    app.post('/allbooks',async(req,res)=>{
         const newBook = req.body;
         console.log(newBook);
         const result = await booksCollection.insertOne(newBook)
@@ -101,9 +110,24 @@ async function run() {
           author: updatedBook.author,
           rating: updatedBook.rating,
           description: updatedBook.description,
+          quantity:updatedBook.quantity
         }
       }
       const result = await booksCollection.updateOne(filter,book,options)
+      res.send(result)
+    })
+    app.patch('/allbooks/:id',async(req,res)=>{
+      const id = req.params.id;
+      const filter = {_id : new ObjectId(id)}
+      const options = {upsert :true }
+      const updatedquantity = req.body;
+      const bookquantity = {
+        $set:{
+          quantity: updatedquantity.quantity,
+         
+        }
+      }
+      const result = await booksCollection.updateOne(filter,bookquantity,options)
       res.send(result)
     })
 
