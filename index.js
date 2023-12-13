@@ -11,7 +11,8 @@ const port = process.env.PORT || 5000;
 // 'http://localhost:5173'
 app.use(cors({
   origin:[
-    'https://boring-toothpaste.surge.sh',
+    // 'https://boring-toothpaste.surge.sh',
+    'https://effulgent-licorice-b93111.netlify.app',
     'https://library-management-syste-12005.web.app',
     'https://library-management-syste-12005.firebaseapp.com'
   ],
